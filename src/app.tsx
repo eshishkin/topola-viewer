@@ -124,6 +124,11 @@ interface Arguments {
   config: Config;
 }
 
+interface AppProps {
+  currentLanguage: string;
+  onLanguageChange: (lang: string) => void;
+}
+
 function getParamFromSearch(
   name: string,
   search: queryString.ParsedQuery<string>,
@@ -217,7 +222,7 @@ function getArguments(location: H.Location<any>): Arguments {
   };
 }
 
-export function App() {
+export function App(props: AppProps) {
   /** State of the application. */
   const [state, setState] = useState<AppState>(AppState.INITIAL);
   /** Loaded data. */
@@ -574,6 +579,11 @@ export function App() {
     }
   }
 
+  function onLanguageChange(lang: string) {
+    updateUrl({lang});
+    props.onLanguageChange(lang);
+  }
+
   return (
     <>
       <TopBar
@@ -595,6 +605,8 @@ export function App() {
         showWikiTreeMenus={
           sourceSpec?.source === DataSourceEnum.WIKITREE && showWikiTreeMenus
         }
+        currentLanguage={props.currentLanguage}
+        onLanguageChange={onLanguageChange}
       />
       {staticUrl ? (
         <Routes>

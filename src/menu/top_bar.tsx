@@ -3,6 +3,7 @@ import {FormattedMessage} from 'react-intl';
 import {Link, useLocation, useNavigate} from 'react-router';
 import {Dropdown, Icon, Menu} from 'semantic-ui-react';
 import {IndiInfo, JsonGedcomData} from 'topola';
+import {LANGUAGE_NAMES} from '../languages';
 import {Media} from '../util/media';
 import {MenuType} from './menu_item';
 import {SearchBar} from './search';
@@ -35,6 +36,10 @@ interface Props {
   eventHandlers: EventHandlers;
   /** Whether to show additional WikiTree menus. */
   showWikiTreeMenus: boolean;
+  /** Currently selected language code. */
+  currentLanguage: string;
+  /** Called when the user selects a different language. */
+  onLanguageChange: (lang: string) => void;
 }
 
 export function TopBar(props: Props) {
@@ -47,6 +52,53 @@ export function TopBar(props: Props) {
       search.view = view;
       location.search = queryString.stringify(search);
       navigate(location);
+    }
+  }
+
+   function languagePicker(screenSize: ScreenSize) {
+    const currentName =
+      LANGUAGE_NAMES[props.currentLanguage] || props.currentLanguage.toUpperCase();
+
+    const items = Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+      <Dropdown.Item
+        key={code}
+        active={props.currentLanguage === code}
+        onClick={() => props.onLanguageChange(code)}
+      >
+        <Icon name="world" />
+        {name}
+      </Dropdown.Item>
+    ));
+
+    switch (screenSize) {
+      case ScreenSize.LARGE:
+        return (
+          <Dropdown
+            trigger={
+              <div>
+                <Icon name="world" />
+                {currentName}
+              </div>
+            }
+            className="item"
+            icon={null}
+          >
+            <Dropdown.Menu>{items}</Dropdown.Menu>
+          </Dropdown>
+        );
+
+      case ScreenSize.SMALL:
+        return (
+          <>
+            <Dropdown.Item>
+              <Icon name="world" />
+              {currentName}
+            </Dropdown.Item>
+            <Dropdown.Divider />
+            {items}
+            <Dropdown.Divider />
+          </>
+        );
     }
   }
 
@@ -264,79 +316,84 @@ export function TopBar(props: Props) {
     }
   }
 
-  function wikiTreeLoginMenu(screenSize: ScreenSize) {
-    if (!props.showWikiTreeMenus) {
-      return null;
-    }
-    return (
-      <>
-        <WikiTreeLoginMenu
-          menuType={
-            screenSize === ScreenSize.SMALL ? MenuType.Dropdown : MenuType.Menu
-          }
-          {...props}
-        />
-        {screenSize === ScreenSize.SMALL ? <Dropdown.Divider /> : null}
-      </>
-    );
-  }
+   function wikiTreeLoginMenu(screenSize: ScreenSize) {
+     if (!props.showWikiTreeMenus) {
+       return null;
+     }
+     return (
+       <>
+         <WikiTreeLoginMenu
+           menuType={
+             screenSize === ScreenSize.SMALL ? MenuType.Dropdown : MenuType.Menu
+           }
+           {...props}
+         />
+         {screenSize === ScreenSize.SMALL ? <Dropdown.Divider /> : null}
+       </>
+     );
+   }
 
-  function mobileMenus() {
-    return (
-      <>
-        <Dropdown
-          trigger={
-            <div>
-              <Icon name="sidebar" />
-            </div>
-          }
-          className="item"
-          icon={null}
-        >
-          <Dropdown.Menu>
-            {fileMenus(ScreenSize.SMALL)}
-            {chartMenus(ScreenSize.SMALL)}
-            {wikiTreeLoginMenu(ScreenSize.SMALL)}
+   function mobileMenus() {
+     return (
+       <>
+         <Dropdown
+           trigger={
+             <div>
+               <Icon name="sidebar" />
+             </div>
+           }
+           className="item"
+           icon={null}
+         >
+           <Dropdown.Menu>
+             {fileMenus(ScreenSize.SMALL)}
+             {chartMenus(ScreenSize.SMALL)}
+             {wikiTreeLoginMenu(ScreenSize.SMALL)}
 
-            <Dropdown.Item
-              href="https://github.com/PeWu/topola-viewer"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FormattedMessage
-                id="menu.github"
-                defaultMessage="GitHub project"
-              />
-            </Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
-        {props.standalone ? <Link to="/">{title()}</Link> : title()}
-      </>
-    );
-  }
+             <Dropdown.Divider />
+             {languagePicker(ScreenSize.SMALL)}
+             <Dropdown.Divider />
 
-  function desktopMenus() {
-    return (
-      <>
-        {props.standalone ? <Link to="/">{title()}</Link> : null}
-        {fileMenus(ScreenSize.LARGE)}
-        {chartMenus(ScreenSize.LARGE)}
-        <Menu.Menu position="right">
-          {wikiTreeLoginMenu(ScreenSize.LARGE)}
-          <Menu.Item
-            href="https://github.com/PeWu/topola-viewer"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <FormattedMessage
-              id="menu.github"
-              defaultMessage="GitHub project"
-            />
-          </Menu.Item>
-        </Menu.Menu>
-      </>
-    );
-  }
+             <Dropdown.Item
+               href="https://github.com/PeWu/topola-viewer"
+               target="_blank"
+               rel="noopener noreferrer"
+             >
+               <FormattedMessage
+                 id="menu.github"
+                 defaultMessage="GitHub project"
+               />
+             </Dropdown.Item>
+           </Dropdown.Menu>
+         </Dropdown>
+         {props.standalone ? <Link to="/">{title()}</Link> : title()}
+       </>
+     );
+   }
+
+   function desktopMenus() {
+     return (
+       <>
+         {props.standalone ? <Link to="/">{title()}</Link> : null}
+         {fileMenus(ScreenSize.LARGE)}
+         {chartMenus(ScreenSize.LARGE)}
+         <Menu.Menu position="right">
+           {wikiTreeLoginMenu(ScreenSize.LARGE)}
+           {languagePicker(ScreenSize.LARGE)}
+           <Menu.Item
+             href="https://github.com/PeWu/topola-viewer"
+             target="_blank"
+             rel="noopener noreferrer"
+           >
+             <FormattedMessage
+               id="menu.github"
+               defaultMessage="GitHub project"
+             />
+           </Menu.Item>
+         </Menu.Menu>
+       </>
+     );
+   }
 
   return (
     <>

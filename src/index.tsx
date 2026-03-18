@@ -1,30 +1,47 @@
 import 'canvas-toBlob';
 import {detect} from 'detect-browser';
+import queryString from 'query-string';
+import {useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {IntlProvider} from 'react-intl';
 import {HashRouter as Router} from 'react-router';
 import 'semantic-ui-css/semantic.min.css';
 import {App} from './app';
 import './index.css';
-import messages_bg from './translations/bg.json';
-import messages_cs from './translations/cs.json';
-import messages_de from './translations/de.json';
-import messages_fr from './translations/fr.json';
-import messages_it from './translations/it.json';
-import messages_pl from './translations/pl.json';
-import messages_ru from './translations/ru.json';
+import {LANGUAGE_DATA} from './languages';
 import {MediaContextProvider, mediaStyles} from './util/media';
 
-const messages: {[language: string]: {[message_id: string]: string}} = {
-  bg: messages_bg,
-  cs: messages_cs,
-  de: messages_de,
-  fr: messages_fr,
-  it: messages_it,
-  pl: messages_pl,
-  ru: messages_ru,
-};
-const language = navigator.language && navigator.language.split(/[-_]/)[0];
+function getLanguageFromUrl(): string {
+  const hash = window.location.hash;
+  const queryIndex = hash.indexOf('?');
+  if (queryIndex !== -1) {
+    const search = queryString.parse(hash.slice(queryIndex));
+    const lang = search['lang'];
+    if (typeof lang === 'string' && lang) {
+      return lang;
+    }
+  }
+  return navigator.language && navigator.language.split(/[-_]/)[0];
+}
+
+function Root() {
+  const [language, setLanguage] = useState<string>(getLanguageFromUrl);
+
+  function onLanguageChange(lang: string) {
+    setLanguage(lang);
+  }
+
+  return (
+    <IntlProvider locale={language} messages={LANGUAGE_DATA[language].messages}>
+      <MediaContextProvider>
+        <style>{mediaStyles}</style>
+        <Router>
+          <App onLanguageChange={onLanguageChange} currentLanguage={language} />
+        </Router>
+      </MediaContextProvider>
+    </IntlProvider>
+  );
+}
 
 const browser = detect();
 
@@ -39,14 +56,5 @@ if (browser && browser.name === 'ie') {
     </p>,
   );
 } else {
-  root.render(
-    <IntlProvider locale={language} messages={messages[language]}>
-      <MediaContextProvider>
-        <style>{mediaStyles}</style>
-        <Router>
-          <App />
-        </Router>
-      </MediaContextProvider>
-    </IntlProvider>,
-  );
+  root.render(<Root />);
 }
